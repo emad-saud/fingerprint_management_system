@@ -1,0 +1,5 @@
+{
+  "watch": ["dist"],
+  "ext": "js,json",
+  "exec": "cls & node --no-warnings --import dotenv/config dist/server.js"
+}
