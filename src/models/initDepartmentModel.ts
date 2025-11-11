@@ -29,6 +29,7 @@ const initDepartmentModel = (db: Sequelize) => {
       parentId: {
         type: DataTypes.INTEGER,
         allowNull: true,
+        field: 'parent_id',
         references: {
           model: 'departments',
           key: 'id',

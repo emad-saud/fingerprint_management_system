@@ -6,7 +6,7 @@ import {
   createDevice,
   updateDevice,
   deleteDevice,
-  getDeviceLogs,
+  syncUsers,
   syncdAttendance,
 } from '../controllers/deviceController.js';
 
@@ -15,8 +15,14 @@ const deviceRouter = Router();
 deviceRouter.route('/').get(getAllDevices).post(createDevice);
 
 const syncRouter = Router();
-syncRouter.use(getDeviceLogs);
-syncRouter.get('/attendance', syncdAttendance);
+syncRouter.get('/attendance/:id', syncdAttendance).get(
+  '/users/:id',
+  (req, res, next) => {
+    console.log('shit');
+    next();
+  },
+  syncUsers
+);
 
 deviceRouter.use('/sync', syncRouter);
 

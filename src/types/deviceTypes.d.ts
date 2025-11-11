@@ -18,4 +18,8 @@ interface DeviceLogsAttributes {
   }[];
 }
 
+interface DeviceUsers {
+  
+}
+
 export { DeviceAttributes, DeviceCreationAttributes, DeviceLogsAttributes };

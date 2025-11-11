@@ -30,19 +30,23 @@ export const updateDevice = updateOne(Device, 'params:id', [
 ]);
 export const deleteDevice = deleteOne(Device, 'params:id');
 
-export const getDeviceLogs: RequestHandler = async (req, res, next) => {
+export const syncUsers: RequestHandler = async (req, res, next) => {
   try {
-    const { deviceId } = req.query;
+    const { id } = req.params;
+    console.log('shit');
+    logger.info(`id: ${req.params.id}`, {
+      data: req.params,
+    });
 
-    if (!deviceId || typeof deviceId !== 'string')
+    if (!id || typeof id !== 'string')
       return next(
         new AppError('Please provide valid device_id in the uri query!', 400)
       );
 
-    const device = await Device.findByPk(deviceId);
+    const device = await Device.findByPk(id);
 
     if (!device)
-      return next(new AppError(`Couldn't find Device.id[${deviceId}]`, 404));
+      return next(new AppError(`Couldn't find Device.id[${id}]`, 404));
 
     const zkInstance = new ZKLib(
       device.ip,
@@ -52,13 +56,16 @@ export const getDeviceLogs: RequestHandler = async (req, res, next) => {
       device.commKey
     );
 
-    const logs = (await zkInstance.getAttendances()) as DeviceLogsAttributes;
-    req.deviceLogs = logs;
+    const users = await zkInstance.getUser();
 
-    next();
+    logger.info(`Retrieved [${users.length}] from device[${device.name}]`);
+    res.status(200).json({
+      status: 'success',
+      data: users,
+    });
   } catch (err: any) {
     logger.info('Failed to sync attendances', {
-      service: 'rawAttendance-controller',
+      service: 'device-controller',
       errName: err.name,
       msg: err.message,
     });
@@ -68,13 +75,13 @@ export const getDeviceLogs: RequestHandler = async (req, res, next) => {
       error: err.message,
     });
   } finally {
-    req.zkInstance.disconnect();
+    await req.zkInstance.disconnect();
   }
 };
 
 export const syncdAttendance: RequestHandler = async (req, res, next) => {
   logger.info('trying to sync data', {
-    service: 'sync-attendance',
+    service: 'device-controller',
   });
 
   const { deviceId, from, to } = req.query as {
@@ -112,7 +119,7 @@ export const syncdAttendance: RequestHandler = async (req, res, next) => {
     const { data } = logs || [];
 
     logger.info(`Retrieved ${data.length} logs from device[${device.ip}]`, {
-      service: 'rawAttendance-controller',
+      service: 'device-controller',
       // data,
     });
 
@@ -131,14 +138,14 @@ export const syncdAttendance: RequestHandler = async (req, res, next) => {
     }));
 
     logger.info(`Filtered raw attendance data from Device[${deviceId}]`, {
-      service: 'sync-attendance',
+      service: 'device-controller',
       // data: newRocords,
       data,
     });
 
     const inserted = await RawAttendance.bulkCreate(newRocords, {
       ignoreDuplicates: true,
-      // fields: ['deviceId', 'empId', 'timestamp', 'type'],
+      fields: ['deviceId', 'empId', 'timestamp', 'type'],
     });
 
     res.status(200).json({
@@ -149,7 +156,7 @@ export const syncdAttendance: RequestHandler = async (req, res, next) => {
     });
   } catch (err: any) {
     logger.info('Failed to sync attendances', {
-      service: 'rawAttendance-controller',
+      service: 'device-controller',
       errName: err.name,
       msg: err.message,
     });
@@ -159,6 +166,6 @@ export const syncdAttendance: RequestHandler = async (req, res, next) => {
       error: err.message,
     });
   } finally {
-    req.zkInstance.disconnect();
+    await req.zkInstance.disconnect();
   }
 };

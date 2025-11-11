@@ -6,7 +6,7 @@ import {
   createRawAttendance,
   updateRawAttendance,
   deleteRawAttendance,
-  syncdAttendance,
+  // syncdAttendance,
 } from '../controllers/rawAttendanceController.js';
 
 const rawAttendanceRouter = Router();
@@ -16,7 +16,7 @@ rawAttendanceRouter
   .get(getAllRawAttendances)
   .post(createRawAttendance);
 
-rawAttendanceRouter.get('/sync', syncdAttendance);
+// rawAttendanceRouter.get('/sync', syncdAttendance);
 
 rawAttendanceRouter
   .route('/:id')

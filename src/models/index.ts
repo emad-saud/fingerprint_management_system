@@ -6,6 +6,8 @@ import initRawAttendanceModel from './initRawAttendanceModel.js';
 import initDeviceModel from './initDeviceModel.js';
 import initShiftDay from './initShiftDayModel.js';
 import initShiftAssignmentModel from './initShiftAssignment.Model.js';
+import initOvertimeModel from './initOvertimeModel.js';
+import initProcessedAttendance from './initProcessedAttendance.js';
 
 const db = initDb();
 
@@ -16,6 +18,8 @@ const RawAttendance = initRawAttendanceModel(db);
 const Device = initDeviceModel(db);
 const ShiftDay = initShiftDay(db);
 const ShiftAssignment = initShiftAssignmentModel(db);
+const Overtime = initOvertimeModel(db);
+const ProcessedAttendance = initProcessedAttendance(db);
 
 // --- Associations ---
 //  Employee : Department (Associations)
@@ -74,6 +78,37 @@ Shift.hasMany(ShiftAssignment, {
   // sourceKey: 'id',
 });
 
+// Overtime : Employee (Associations)
+Overtime.belongsTo(Employee, { as: 'employee', foreignKey: 'emp_id' });
+Employee.hasMany(Overtime, { as: 'otList', foreignKey: 'emp_id' });
+
+// ProcessedAttendance : Employee (Associations)
+ProcessedAttendance.belongsTo(Employee, {
+  as: 'employee',
+  foreignKey: 'emp_id',
+});
+Employee.hasMany(ProcessedAttendance, {
+  as: 'processedAttendance',
+  foreignKey: 'emp_id',
+});
+
+// ProcessedAttendance : Shift (Associations)
+ProcessedAttendance.belongsTo(Shift, { as: 'shift', foreignKey: 'shift_id' });
+Shift.hasMany(ProcessedAttendance, {
+  as: 'processedAttendances',
+  foreignKey: 'shift_id',
+});
+
+// ProcessedAttendance : ShiftDay (Associations)
+ProcessedAttendance.belongsTo(ShiftDay, {
+  as: 'shiftDay',
+  foreignKey: 'shift_day',
+});
+ShiftDay.hasMany(ProcessedAttendance, {
+  as: 'processedAttendance',
+  foreignKey: 'shift_day',
+});
+
 // --- Scopes ---
 // Employee.addScope('withShift', { include: [{ model: Shift, as: 'shift' }] });
 Employee.addScope('withDepartment', { include: [{ model: Department }] });
@@ -82,7 +117,7 @@ Employee.addScope('withRawAttendance', { include: [{ model: RawAttendance }] });
 Department.addScope('withEmployees', { include: [{ model: Employee }] });
 
 RawAttendance.addScope('withEmployee', { include: [{ model: Employee }] });
-RawAttendance.addScope('whitShift', { include: [{ model: Shift }] });
+RawAttendance.addScope('whithShift', { include: [{ model: Shift }] });
 
 Shift.addScope(
   'defaultScope',
@@ -99,4 +134,6 @@ export {
   Device,
   ShiftDay,
   ShiftAssignment,
+  Overtime,
+  ProcessedAttendance,
 };
