@@ -40,6 +40,15 @@ const initShiftAssignmentModel = (db: Sequelize) => {
         type: DataTypes.DATE,
         // allowNull: false,
       },
+      shiftId: {
+        type: DataTypes.NUMBER,
+        allowNull: false,
+        field: 'shift_id',
+        references: {
+          model: 'shifts',
+          key: 'id',
+        },
+      },
     },
     {
       sequelize: db,

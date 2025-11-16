@@ -4,6 +4,7 @@ import type {
   EmployeeAttributes,
   EmployeeCreationAttributes,
 } from '../types/employeeTypes.js';
+import type { ShiftAssignmentAttributes } from '../types/shiftAssignmentTypes.js';
 
 const initEmployeeModel = (db: Sequelize) => {
   class Employee extends Model<EmployeeAttributes, EmployeeCreationAttributes> {
@@ -11,6 +12,7 @@ const initEmployeeModel = (db: Sequelize) => {
     declare empId: number;
     declare fullName: string;
     declare departmentId: number;
+    declare shiftAssignments: ShiftAssignmentAttributes[];
   }
 
   Employee.init(
@@ -27,6 +29,14 @@ const initEmployeeModel = (db: Sequelize) => {
       fullName: {
         type: DataTypes.STRING,
         allowNull: false,
+      },
+      departmentId: {
+        type: DataTypes.INTEGER,
+        field: 'department_id',
+        references: {
+          model: 'departments',
+          key: 'id',
+        },
       },
     },
     {

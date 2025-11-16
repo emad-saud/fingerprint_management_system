@@ -14,17 +14,13 @@ const deviceRouter = Router();
 
 deviceRouter.route('/').get(getAllDevices).post(createDevice);
 
-const syncRouter = Router();
-syncRouter.get('/attendance/:id', syncdAttendance).get(
-  '/users/:id',
-  (req, res, next) => {
-    console.log('shit');
-    next();
-  },
-  syncUsers
-);
+// const syncRouter = Router();
+// syncRouter.get('/attendance/:id', syncdAttendance).get('/users/:id', syncUsers);
 
-deviceRouter.use('/sync', syncRouter);
+deviceRouter.get('/sync/users', syncUsers);
+deviceRouter.get('/sync/attendance', syncdAttendance);
+
+// deviceRouter.use('/sync', syncRouter);
 
 deviceRouter
   .route('/:id')

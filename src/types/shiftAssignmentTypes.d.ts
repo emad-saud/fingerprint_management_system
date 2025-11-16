@@ -4,7 +4,8 @@ interface ShiftAssignmentAttributes {
   id?: number;
   empId: number;
   validFrom: Date;
-  validTo: Date | undefined;
+  validTo?: Date | null;
+  shiftId: number;
 }
 
 interface ShiftAssignmentCreationAttributes

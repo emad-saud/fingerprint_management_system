@@ -47,8 +47,32 @@ class ApiFeatures<T extends Model> {
     this.options.where = where;
     logger.info('filtered a request!', {
       service: 'apiFeatures-service',
-      thisObj: this,
+      // thisObj: this,
     });
+    return this;
+  }
+
+  split() {
+    const queryObj = { ...this.queryString };
+    Object.entries(queryObj).forEach((obj) => {
+      const field = obj[0];
+      const value = obj[1];
+
+      logger.info('splitting request query!', {
+        service: 'factroy-handler',
+        // field,
+        // value,
+      });
+
+      if (typeof value === 'string' && value.split(',').length) {
+        if ((this.options.where as Record<string, any>)[field]) {
+          (this.options.where as Record<string, any>)[field] = {
+            [Op.in]: value.split(','),
+          };
+        }
+      }
+    });
+
     return this;
   }
 
@@ -63,8 +87,8 @@ class ApiFeatures<T extends Model> {
       this.options.order = order;
       logger.info('sorting request', {
         service: 'apiFeatures-service',
-        order,
-        sort: this.queryString.sort,
+        // order,
+        // sort: this.queryString.sort,
       });
     }
     return this;
@@ -87,7 +111,7 @@ class ApiFeatures<T extends Model> {
 
       logger.info('selecting request fields', {
         service: 'apiFeatures',
-        fields: attributes,
+        // fields: attributes,
       });
     }
     return this;

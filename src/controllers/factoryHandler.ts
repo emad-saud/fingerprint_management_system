@@ -16,11 +16,12 @@ export const getAll = <T extends Model>(model: ModelStatic<T>) =>
   catchAsync(async (req, res, next) => {
     const { options } = new ApiFeatures(req.query)
       .filter()
+      .split()
       .sort()
       .paginate()
       .fields();
 
-    const records = await model.findAll(options);
+    const records = await model.findAll(options || {});
 
     res.status(200).json({
       status: 'success',

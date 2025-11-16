@@ -4,7 +4,7 @@ import initDepartmentModel from './initDepartmentModel.js';
 import initShiftModel from './initShiftModel.js';
 import initRawAttendanceModel from './initRawAttendanceModel.js';
 import initDeviceModel from './initDeviceModel.js';
-import initShiftDay from './initShiftDayModel.js';
+import initShiftDayModel from './initShiftDayModel.js';
 import initShiftAssignmentModel from './initShiftAssignment.Model.js';
 import initOvertimeModel from './initOvertimeModel.js';
 import initProcessedAttendance from './initProcessedAttendance.js';
@@ -16,7 +16,7 @@ const Department = initDepartmentModel(db);
 const Shift = initShiftModel(db);
 const RawAttendance = initRawAttendanceModel(db);
 const Device = initDeviceModel(db);
-const ShiftDay = initShiftDay(db);
+const ShiftDay = initShiftDayModel(db);
 const ShiftAssignment = initShiftAssignmentModel(db);
 const Overtime = initOvertimeModel(db);
 const ProcessedAttendance = initProcessedAttendance(db);
@@ -26,8 +26,13 @@ const ProcessedAttendance = initProcessedAttendance(db);
 Employee.belongsTo(Department, {
   as: 'department',
   foreignKey: 'department_id',
+  targetKey: 'id',
 });
-Department.hasMany(Employee, { as: 'employees', foreignKey: 'department_id' });
+Department.hasMany(Employee, {
+  as: 'employees',
+  foreignKey: 'department_id',
+  sourceKey: 'id',
+});
 
 // Employee : Shift (Associations)
 // Employee.belongsTo(Shift, {
@@ -49,8 +54,8 @@ RawAttendance.belongsTo(Employee, {
 });
 
 // Shift : RawAttendance (Associations)
-Shift.hasMany(RawAttendance, { as: 'rawAttendances', foreignKey: 'shift_id' });
-RawAttendance.belongsTo(Shift, { as: 'shift', foreignKey: 'shift_id' });
+// Shift.hasMany(RawAttendance, { as: 'rawAttendances', foreignKey: 'shift_id' });
+// RawAttendance.belongsTo(Shift, { as: 'shift', foreignKey: 'shift_id' });
 
 // Shift : ShiftDay (Associations)
 Shift.hasMany(ShiftDay, { as: 'shiftDays', foreignKey: 'shift_id' });
@@ -58,12 +63,14 @@ ShiftDay.belongsTo(Shift, { as: 'shift', foreignKey: 'shift_id' });
 
 // ShiftAssignments: Employee (Associations)
 ShiftAssignment.belongsTo(Employee, {
+  as: 'employee',
   foreignKey: 'emp_id',
   targetKey: 'empId',
 });
 Employee.hasMany(ShiftAssignment, {
   foreignKey: 'emp_id',
   sourceKey: 'empId',
+  as: 'shiftAssignments',
 });
 
 // ShiftAssignments : Shift (Associations)

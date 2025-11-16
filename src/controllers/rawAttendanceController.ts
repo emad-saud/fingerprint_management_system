@@ -22,6 +22,7 @@ export const createRawAttendance = createOne(RawAttendance, [
   'timestamp',
   'type',
   'empId',
+  'deviceId',
 ]);
 export const updateRawAttendance = updateOne(RawAttendance, 'params:id', [
   'timestamp',

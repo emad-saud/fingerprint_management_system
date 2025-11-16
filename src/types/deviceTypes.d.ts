@@ -18,8 +18,30 @@ interface DeviceLogsAttributes {
   }[];
 }
 
-interface DeviceUsers {
-  
+// types/deviceTypes.ts
+
+export interface ZKLibResponse<T> {
+  code: number;
+  message: string;
+  data: T[];
 }
+
+export interface ZKUser {
+  uid: number;
+  userId: string;
+  name: string;
+  privilege: number;
+  password: string;
+  cardno: string;
+}
+
+export interface ZKAttendance {
+  uid: number;
+  id: string;
+  state: number;
+  timestamp: Date;
+}
+
+interface DeviceUsers {}
 
 export { DeviceAttributes, DeviceCreationAttributes, DeviceLogsAttributes };

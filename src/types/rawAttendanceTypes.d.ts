@@ -2,9 +2,9 @@ import { Optional } from 'sequelize';
 
 interface RawAttendanceAttributes {
   id: string;
-  empId: number;
+  empId?: number;
   timestamp: Date;
-  deviceId: string;
+  deviceId: number;
   type: 'check-in' | 'check-out';
 }
 interface RawAttendanceCreationAttributes

@@ -4,19 +4,18 @@ import type {
   ShiftDayAttributes,
   ShiftDayCreationAttributes,
 } from '../types/shiftDayTypes.js';
-import { Shift } from './index.js';
+import { ShiftDay } from './index.js';
 
-const initShiftDay = (db: Sequelize) => {
-  class Shiftday extends Model<ShiftDayAttributes, ShiftDayCreationAttributes> {
+const initShiftDayModel = (db: Sequelize) => {
+  class ShiftDay extends Model<ShiftDayAttributes, ShiftDayCreationAttributes> {
     declare id: string;
-    declare empId: number;
     declare shiftId: number;
-    declare effectiveFrom: Date;
-    declare effectiveTo: Date;
-    declare isTemporary: boolean;
+    // declare effectiveFrom: Date;
+    // declare effectiveTo: Date;
+    // declare isTemporary: boolean;
   }
 
-  Shiftday.init(
+  ShiftDay.init(
     {
       id: {
         type: DataTypes.UUID,
@@ -33,7 +32,7 @@ const initShiftDay = (db: Sequelize) => {
         },
       },
       dayOfWeek: {
-        type: DataTypes.ENUM('mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'),
+        type: DataTypes.ENUM('sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'),
         allowNull: false,
       },
       allowOvertime: {
@@ -41,11 +40,11 @@ const initShiftDay = (db: Sequelize) => {
         defaultValue: false,
       },
       startTime: {
-        type: DataTypes.DATE,
+        type: DataTypes.TIME,
         allowNull: false,
       },
       endTime: {
-        type: DataTypes.DATE,
+        type: DataTypes.TIME,
         allowNull: false,
       },
       gracePeriodIn: {
@@ -53,8 +52,12 @@ const initShiftDay = (db: Sequelize) => {
         defaultValue: 0,
       },
       gracePeriodOut: {
-        type: DataTypes.DATE,
+        type: DataTypes.INTEGER,
         defaultValue: 0,
+      },
+      isOffDuty: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
       },
     },
     {
@@ -71,7 +74,7 @@ const initShiftDay = (db: Sequelize) => {
     }
   );
 
-  return Shift;
+  return ShiftDay;
 };
 
-export default initShiftDay;
+export default initShiftDayModel;

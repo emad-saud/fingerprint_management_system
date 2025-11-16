@@ -9,6 +9,8 @@ interface ShiftDayAttributes {
   gracePeriodIn: number;
   gracePeriodOut: number;
   shiftId: number;
+  isOffDuty: boolean;
+
 }
 
 interface ShiftDayCreationAttributes

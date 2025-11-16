@@ -1,4 +1,5 @@
 import type { Optional } from 'sequelize';
+import type { ShiftAssignmentAttributes } from './shiftAssignmentTypes.js';
 
 interface EmployeeAttributes {
   id: string;
@@ -6,6 +7,7 @@ interface EmployeeAttributes {
   fullName: string;
   departmentId?: number;
   // shift: string;
+  shiftAssignments?: ShiftAssignmentAttributes[];
 }
 
 interface EmployeeCreationAttributes

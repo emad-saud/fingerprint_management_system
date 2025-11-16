@@ -15,6 +15,7 @@ export const initProcessedAttendance = (db: Sequelize) => {
     declare shiftDayId: string | undefined;
     declare checkIn: Date;
     declare checkOut: Date;
+    declare firstPunch: Date;
     declare lastPunch: Date;
     declare workDurationMinutes: number | undefined;
   }
@@ -40,7 +41,7 @@ export const initProcessedAttendance = (db: Sequelize) => {
       },
       shiftId: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        // allowNull: false,
         references: {
           model: 'shifts',
           key: 'id',
@@ -68,6 +69,10 @@ export const initProcessedAttendance = (db: Sequelize) => {
         allowNull: true,
       },
       lastPunch: {
+        type: DataTypes.TIME,
+        allowNull: true,
+      },
+      firstPunch: {
         type: DataTypes.TIME,
         allowNull: true,
       },

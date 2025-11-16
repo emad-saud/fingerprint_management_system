@@ -4,15 +4,17 @@ import type {
   ShiftAttributes,
   ShiftCreationAttributes,
 } from '../types/shiftTypes.js';
+import type { ShiftDayAttributes } from '../types/shiftDayTypes.js';
 
 const initShiftModel = (db: Sequelize) => {
   class Shift extends Model<ShiftAttributes, ShiftCreationAttributes> {
-    id!: number;
-    name!: string;
-    startTime!: string;
-    endTime!: string;
-    allowOvertime!: boolean;
-    isFlexible!: boolean;
+    declare id: number;
+    declare name: string;
+    declare startTime: string;
+    declare endTime: string;
+    declare allowOvertime: boolean;
+    declare isFlexible: boolean;
+    declare shiftDays: ShiftDayAttributes[];
   }
 
   Shift.init(

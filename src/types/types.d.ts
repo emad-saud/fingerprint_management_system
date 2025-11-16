@@ -13,6 +13,7 @@ declare global {
       DB_PORT: number;
       FINGERPRINT_IP: string;
       FINGERPRINT_PORT: number;
+      TIME_ZONE: string;
     }
   }
   namespace Express {

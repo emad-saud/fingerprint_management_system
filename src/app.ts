@@ -7,8 +7,11 @@ import morgan from 'morgan';
 import employeeRouter from './routes/employeeRoutes.js';
 import departmentRouter from './routes/departmentRoutes.js';
 import shiftRouter from './routes/shiftRoutes.js';
-import rawAttendanceRouter from './routes/rawAttendanceRouter.js';
+import rawAttendanceRouter from './routes/rawAttendanceRoutes.js';
 import deviceRouter from './routes/deviceRoutes.js';
+import overtimeRouter from './routes/overtimeRoutes.js';
+import processedAttRouter from './routes/processedAttendanceRoutes.js';
+import shiftAssignmentRouter from './routes/shiftAssignmentRoutes.js';
 
 import { globalErrorHandler } from './controllers/errorController.js';
 
@@ -25,6 +28,9 @@ app.use('/api/v1/departments', departmentRouter);
 app.use('/api/v1/shifts', shiftRouter);
 app.use('/api/v1/raw', rawAttendanceRouter);
 app.use('/api/v1/devices', deviceRouter);
+app.use('/api/v1/overtime', overtimeRouter);
+app.use('/api/v1/processed-att', processedAttRouter);
+app.use('/api/v1/shift-assign', shiftAssignmentRouter);
 
 app.use(globalErrorHandler);
 

@@ -8,6 +8,7 @@ export interface ShiftAttributes {
   gracePeriodMinutes: number;
   allowOvertime: boolean;
   isFlexible: boolean;
+  shiftDays?: ShiftAttributes[];
 }
 
 export interface ShiftCreationAttributes

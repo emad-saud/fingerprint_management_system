@@ -9,6 +9,7 @@ interface ProcessedAttendanceAttributes {
   checkIn: Date;
   checkOut: Date;
   lastPunch: Date;
+  declare firstPunch: Date
   workDurationMinutes: number | undefined;
 }
 

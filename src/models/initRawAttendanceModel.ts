@@ -1,5 +1,4 @@
 import { Model, Sequelize, DataTypes } from 'sequelize';
-
 import type {
   RawAttendanceAttributes,
   RawAttendanceCreationAttributes,
@@ -12,7 +11,7 @@ const initRawAttendanceModel = (db: Sequelize) => {
   > {
     declare id: string;
     declare empId: number;
-    declare deviceId: string;
+    declare deviceId: number;
     declare timestamp: Date;
     declare type: 'check-in' | 'check-out';
   }
@@ -24,24 +23,22 @@ const initRawAttendanceModel = (db: Sequelize) => {
         defaultValue: DataTypes.UUIDV4,
         primaryKey: true,
       },
+      empId: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        field: 'emp_id', // ✅ maps camelCase → snake_case
+      },
+      deviceId: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: 'device_id', // optional but recommended for consistency
+      },
       timestamp: {
         type: DataTypes.DATE,
         allowNull: false,
       },
       type: {
         type: DataTypes.ENUM('check-in', 'check-out'),
-        allowNull: false,
-      },
-      empId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: 'employees',
-          key: 'emp_id',
-        },
-      },
-      deviceId: {
-        type: DataTypes.INTEGER,
         allowNull: false,
       },
     },
