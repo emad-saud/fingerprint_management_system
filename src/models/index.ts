@@ -8,6 +8,7 @@ import initShiftDayModel from './initShiftDayModel.js';
 import initShiftAssignmentModel from './initShiftAssignment.Model.js';
 import initOvertimeModel from './initOvertimeModel.js';
 import initProcessedAttendance from './initProcessedAttendance.js';
+import initPublicHolidayModel from './initPublicHolidayModel.js';
 
 const db = initDb();
 
@@ -20,6 +21,7 @@ const ShiftDay = initShiftDayModel(db);
 const ShiftAssignment = initShiftAssignmentModel(db);
 const Overtime = initOvertimeModel(db);
 const ProcessedAttendance = initProcessedAttendance(db);
+const PublicHoliday = initPublicHolidayModel(db);
 
 // --- Associations ---
 //  Employee : Department (Associations)
@@ -102,18 +104,18 @@ Employee.hasMany(ProcessedAttendance, {
 // ProcessedAttendance : Shift (Associations)
 ProcessedAttendance.belongsTo(Shift, { as: 'shift', foreignKey: 'shift_id' });
 Shift.hasMany(ProcessedAttendance, {
-  as: 'processedAttendances',
+  as: 'processedAttendance',
   foreignKey: 'shift_id',
 });
 
 // ProcessedAttendance : ShiftDay (Associations)
 ProcessedAttendance.belongsTo(ShiftDay, {
   as: 'shiftDay',
-  foreignKey: 'shift_day',
+  foreignKey: 'shift_day_id',
 });
 ShiftDay.hasMany(ProcessedAttendance, {
   as: 'processedAttendance',
-  foreignKey: 'shift_day',
+  foreignKey: 'shift_day_id',
 });
 
 // --- Scopes ---
@@ -143,4 +145,5 @@ export {
   ShiftAssignment,
   Overtime,
   ProcessedAttendance,
+  PublicHoliday,
 };

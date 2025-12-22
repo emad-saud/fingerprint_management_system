@@ -25,6 +25,7 @@ const initShiftAssignmentModel = (db: Sequelize) => {
       },
       empId: {
         type: DataTypes.INTEGER,
+        field: 'emp_id',
         references: {
           model: 'employees',
           key: 'emp_id',

@@ -7,6 +7,7 @@ import {
   updateRawAttendance,
   deleteRawAttendance,
   // syncdAttendance,
+  importAttFromExcel,
 } from '../controllers/rawAttendanceController.js';
 
 const rawAttendanceRouter = Router();
@@ -16,7 +17,7 @@ rawAttendanceRouter
   .get(getAllRawAttendances)
   .post(createRawAttendance);
 
-// rawAttendanceRouter.get('/sync', syncdAttendance);
+rawAttendanceRouter.get('/sync', importAttFromExcel);
 
 rawAttendanceRouter
   .route('/:id')

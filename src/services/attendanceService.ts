@@ -1,64 +1,26 @@
-import { Op } from 'sequelize';
+import { employeeRepo } from '../repositories/employeeRepo.js';
+import { logsRepo } from '../repositories/logsRepo.js';
+import { shiftRepo } from '../repositories/shiftRepo.js';
+import { overtimeRepo } from '../repositories/overtimeRepo.js';
+import { attendanceEngine } from '../engines/attendanceEngine.js';
+import { holidayRepo } from '../repositories/holidayRepo.js';
 
-import {
-  Employee,
-  ShiftAssignment,
-  Shift,
-  ShiftDay,
-  RawAttendance,
-} from '../models/index.js';
-import { AttendanceEngine } from '../engines/attendanceEngine.js';
+export const attendanceService = {
+  async processAttendance(fromDate: string, toDate: string) {
+    const employees = await employeeRepo.getAllEmployeeWithShifts();
+    const shifts = await shiftRepo.getAllShiftsWithDays();
+    const logs = await logsRepo.getAllLogs();
+    const overtime = await overtimeRepo.getAllOvertime();
+    const holidays = await holidayRepo.getAllPublicHolidays();
 
-class AttendanceService {
-  async calculate({
-    empId,
-    departmentId,
-    from,
-    to,
-  }: {
-    empId?: string;
-    departmentId?: number;
-    from?: string;
-    to?: string;
-  }) {
-    const startDate = from ? new Date(from) : new Date('1970-01-01');
-    const endDate = to ? new Date(to) : new Date();
-
-    const empIds = empId?.split(',').map(Number) || [];
-
-    const employees = await Employee.findAll({
-      where: {
-        [Op.or]: [{ empId: { [Op.in]: empIds } }, { departmentId }],
-      },
-      include: [
-        {
-          model: ShiftAssignment,
-          required: false,
-        },
-      ],
-    });
-
-    const shifts = await Shift.findAll({
-      include: [ShiftDay],
-    });
-
-    const rawLogs = await RawAttendance.findAll({
-      where: {
-        timestamp: {
-          [Op.between]: [startDate, endDate],
-        },
-      },
-      order: [['timestamp', 'ASC']],
-    });
-
-    const processed = AttendanceEngine.process({
+    return attendanceEngine.generate({
       employees,
       shifts,
-      rawLogs,
+      rawLogs: logs,
+      overtime,
+      holidays,
+      fromDate,
+      toDate,
     });
-
-    return { employees, processed };
-  }
-}
-
-export const attendanceService = new AttendanceService();
+  },
+};

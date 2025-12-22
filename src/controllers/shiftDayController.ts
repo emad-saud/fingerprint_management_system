@@ -26,3 +26,4 @@ export const updateShiftDay = updateOne(ShiftDay, 'params:id', [
   'gracePeriodIn',
   'gracePeriodOut',
 ]);
+export const deleteShiftDay = deleteOne(ShiftDay, 'params:id');

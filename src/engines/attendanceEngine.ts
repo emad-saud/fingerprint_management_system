@@ -1,101 +1,145 @@
-import { Employee, Shift, RawAttendance, ShiftAssignment, ShiftDay } from '../models/index.js';
+import type {
+  Employee,
+  Shift,
+  RawAttendance,
+  Overtime,
+  PublicHoliday,
+} from '../models/index.js';
 
-type ProcessedAttendanceStatus = 'NO_SHIFT' | 'OFF_DAY' | 'PRESENT' | 'ABSENT';
+import { groupLogs } from '../utils/groupLogs.js';
+import { logger } from '../utils/logger.js';
+import { processOneDay } from './processOneDay.js';
+import { dateOnlyKeyFromLibya, iterateDates } from '../utils/time.js';
 
-interface ProcessedAttendanceRecord {
-  empId: number;
-  date: Date;
-  status: ProcessedAttendanceStatus;
-  shiftId?: number;
-  shiftDay?: ShiftDay;
-  rawLog?: RawAttendance;
-}
+export const attendanceEngine = {
+  generate({
+    employees,
+    shifts,
+    rawLogs,
+    overtime,
+    holidays,
+    fromDate,
+    toDate,
+  }: {
+    employees: InstanceType<typeof Employee>[];
+    shifts: InstanceType<typeof Shift>[];
+    rawLogs: InstanceType<typeof RawAttendance>[];
+    overtime: InstanceType<typeof Overtime>[];
+    holidays: InstanceType<typeof PublicHoliday>[];
+    fromDate: string;
+    toDate: string;
+  }) {
+    const result = [];
+    const logsByEmp = groupLogs(rawLogs);
 
-interface AttendanceEngineParams {
-  employees: InstanceType<typeof Employee>[];
-  shifts: InstanceType<typeof Shift>[];
-  rawLogs: InstanceType<typeof RawAttendance>[];
-}
+    const overtimeByKey = new Map();
+    for (const o of overtime) overtimeByKey.set(`${o.empId}-${o.date}`, o);
 
-interface FindShiftParams {
-  date: Date;
-  assignments: InstanceType<typeof ShiftAssignment>[];
-  shifts: InstanceType<typeof Shift>[];
-}
-
-export class AttendanceEngine {
-  /**
-   * Main processing function
-   */
-  static process({ employees, shifts, rawLogs }: AttendanceEngineParams): ProcessedAttendanceRecord[] {
-    const results: ProcessedAttendanceRecord[] = [];
-
-    for (const emp of employees) {
-      const logs = rawLogs.filter(l => l.empId === emp.empId);
-      const assignments = emp.shiftAssignments || [];
-
-      for (const log of logs) {
-        const date = log.timestamp;
-        const shift = this.findApplicableShift({ date, assignments, shifts });
-
-        if (!shift) {
-          results.push({ empId: emp.empId, date, status: 'NO_SHIFT' });
-          continue;
-        }
-
-        const dayName = this.getDayName(date);
-        const shiftDayConfig = shift.ShiftDays?.find(d => d.day === dayName);
-
-        if (!shiftDayConfig) {
-          results.push({ empId: emp.empId, date, status: 'OFF_DAY', shiftId: shift.id });
-          continue;
-        }
-
-        // Placeholder for IN/OUT matching, late, overtime etc
-        results.push({
-          empId: emp.empId,
-          date,
-          status: 'PRESENT', // replace with actual logic
-          shiftId: shift.id,
-          shiftDay: shiftDayConfig,
-          rawLog: log
-        });
-      }
+    const holidayByKey = new Map();
+    for (const h of holidays) {
+      const key = h.empId ? `${h.empId}-${h.date}` : `global-${h.date}`;
+      holidayByKey.set(key, h);
     }
 
-    return results;
-  }
+    const from =
+      typeof fromDate === 'string' ? new Date(fromDate) : new Date(fromDate);
+    const to = typeof toDate === 'string' ? new Date(toDate) : new Date(toDate);
 
-  /**
-   * Find the shift that applies to a specific date for an employee
-   */
-  static findApplicableShift({ date, assignments, shifts }: FindShiftParams): InstanceType<typeof Shift> | null {
-    const d = new Date(date);
+    const dates = iterateDates(from, to);
 
-    // Find the matching ShiftAssignment
-    const assignment = assignments.find(a => {
-      const from = new Date(a.validFrom);
-      const to = a.validTo ? new Date(a.validTo) : null;
-      return from <= d && (!to || d <= to);
-    });
+    for (const emp of employees) {
+      const assignments = emp.shiftAssignments || [];
 
-    if (!assignment) return null;
+      for (const dateObj of dates) {
+        const dateKey = dateOnlyKeyFromLibya(dateObj);
+        const empLogsForDay = logsByEmp[emp.empId]![dateKey];
 
-    // The assignment contains shiftId
-    return shifts.find(s => s.id === assignment.shiftId) || null;
-  }
+        const assignment = assignments.find((a) => {
+          const from = new Date(a.validFrom);
+          const to = a.validTo ? new Date(a.validTo) : null;
 
-  /**
-   * Get the day name (sun, mon, ...) from a date
-   */
-  static getDayName(date: Date): 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' {
-    return ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][date.getDay()] as
-      | 'sun'
-      | 'mon'
-      | 'tue'
-      | 'wed'
-      | 'thu'
-      | 'fri'
-      | 'sat';
-  }
-}
+          return from <= dateObj && (!to || dateObj <= to);
+        });
+
+        if (!assignment) {
+          result.push({
+            empId: emp.empId,
+            date: dateKey,
+            status: 'NO_SHIFT_ASSIGNMENT',
+            detailsJson: {
+              reason: 'NO_SHIFT_ASSIGNMENT',
+            },
+          });
+          continue;
+        }
+
+        const shift = shifts.find((s) => s.id === assignment.shiftId);
+        if (!shift) {
+          result.push({
+            empId: emp.empId,
+            date: dateKey,
+            status: 'NO_SHIFT_CONFIG',
+            detailsJson: { reason: 'MISSING_SHIFT_CONFIG' },
+          });
+          continue;
+        }
+
+        const dayName = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'][
+          dateObj.getDay()
+        ];
+        const shiftDay = (shift.shiftDays || []).find(
+          (sd) => sd.dayOfWeek === dayName
+        );
+
+        const overtimeRecord = overtimeByKey.get(`${emp.empId}-${dateKey}`);
+        const holidayRecord =
+          holidayByKey.get(`${emp.empId}-${dateKey}`) ??
+          holidayByKey.get(`global-${dateKey}`);
+
+        const dayResult = processOneDay({
+          emp,
+          assignment,
+          dateKey,
+          logsForDay: empLogsForDay || [],
+          shift,
+          shiftDay,
+          overtimeRecord,
+          holiday: holidayRecord,
+        });
+
+        result.push(dayResult);
+      }
+
+      // for (const [dateKey, logsForDay] of Object.entries(empLogs) as [
+      //   string,
+      //   InstanceType<typeof RawAttendance>[]
+      // ][]) {
+      //   const holiday = holidays.find(
+      //     (h) => h.date === dateKey && (h.empId === emp.empId || !h.empId)
+      //   );
+      //   if (holiday)
+      //     logger.info('Found holiday', {
+      //       service: 'attendance-engine',
+      //       holiday,
+      //     });
+
+      //   const overtimeRecord = overtime.find(
+      //     (o) => o.empId === emp.empId && o.date === dateKey
+      //   );
+
+      //   result.push(
+      //     processOneDay({
+      //       emp,
+      //       dateKey,
+      //       logsForDay,
+      //       shifts,
+      //       overtimeRecord,
+      //       holiday,
+      //     })
+      //   );
+      // }
+    }
+
+    return result;
+  },
+};

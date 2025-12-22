@@ -5,7 +5,9 @@ export interface ShiftAttributes {
   name: string;
   startTime: string;
   endTime: string;
-  gracePeriodMinutes: number;
+  // gracePeriodMinutes: number;
+  gracePeriodIn: number;
+  gracePeriodOut: number;
   allowOvertime: boolean;
   isFlexible: boolean;
   shiftDays?: ShiftAttributes[];

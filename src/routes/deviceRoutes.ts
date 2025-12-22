@@ -7,7 +7,7 @@ import {
   updateDevice,
   deleteDevice,
   syncUsers,
-  syncdAttendance,
+  syncAttendance,
 } from '../controllers/deviceController.js';
 
 const deviceRouter = Router();
@@ -15,10 +15,10 @@ const deviceRouter = Router();
 deviceRouter.route('/').get(getAllDevices).post(createDevice);
 
 // const syncRouter = Router();
-// syncRouter.get('/attendance/:id', syncdAttendance).get('/users/:id', syncUsers);
+// syncRouter.get('/attendance/:id', syncAttendance).get('/users/:id', syncUsers);
 
 deviceRouter.get('/sync/users', syncUsers);
-deviceRouter.get('/sync/attendance', syncdAttendance);
+deviceRouter.get('/sync/attendance', syncAttendance);
 
 // deviceRouter.use('/sync', syncRouter);
 

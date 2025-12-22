@@ -4,7 +4,6 @@ import type {
   ShiftDayAttributes,
   ShiftDayCreationAttributes,
 } from '../types/shiftDayTypes.js';
-import { ShiftDay } from './index.js';
 
 const initShiftDayModel = (db: Sequelize) => {
   class ShiftDay extends Model<ShiftDayAttributes, ShiftDayCreationAttributes> {
@@ -65,6 +64,7 @@ const initShiftDayModel = (db: Sequelize) => {
       tableName: 'shift_days',
       modelName: 'ShiftDay',
       underscored: true,
+      timestamps: false,
       indexes: [
         {
           unique: true,

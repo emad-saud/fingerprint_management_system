@@ -1,11 +1,8 @@
-import ZKLib from 'node-zklib';
-import { type RequestHandler } from 'express';
-
-import type { DeviceLogsAttributes } from '../types/deviceTypes.js';
+import xlsx from 'xlsx';
 
 import {
   getAll,
-  getOne,
+  // getOne,
   getOneByPk,
   updateOne,
   deleteOne,
@@ -30,93 +27,80 @@ export const updateRawAttendance = updateOne(RawAttendance, 'params:id', [
 ]);
 export const deleteRawAttendance = deleteOne(RawAttendance, 'params:id');
 
-// export const syncdAttendance: RequestHandler = async (req, res, next) => {
-//   logger.info('trying to sync data', {
-//     service: 'sync-attendance',
-//   });
+export const importAttFromExcel = catchAsync(async (req, res, next) => {
+  const workBook = xlsx.readFile(
+    `C:/Users/DELL/Desktop/excel_files/fixed_final_version.xlsx`
+  );
 
-//   const { deviceId, from, to } = req.query as {
-//     deviceId?: string;
-//     from?: Date;
-//     to?: Date;
-//   };
+  const sheetName = workBook.SheetNames[0];
+  if (!sheetName) {
+    return next(new AppError('Cant get sheet name', 400));
+  }
 
-//   if (!deviceId)
-//     return next(
-//       new AppError('Please provide device_id in the url query!', 400)
-//     );
+  const sheet = workBook.Sheets[sheetName];
+  if (!sheet) return next(new AppError('Cant find Sheet', 400));
 
-//   const fromDate = from ? new Date(from) : new Date('1970-01-01');
-//   const toDate = to ? new Date(to) : new Date();
+  const rows = xlsx.utils.sheet_to_json(sheet);
 
-//   try {
-//     const device = await Device.findByPk(deviceId);
-//     if (!device)
-//       return next(new AppError(`Couldn't find Device.id[${deviceId}]`, 404));
+  const logs = (
+    rows as { EmpCode: number; recordTime: number | null; Serial: number }[]
+  ).map((row) => {
+    if (row.EmpCode === 71) {
+      logger.info('importing emad log', {
+        service: 'excel-import',
+        row: {
+          empId: row.EmpCode,
+          recordTime: row.recordTime
+            ? excelSerialToLibyaDate(row.recordTime)
+            : null,
+          serial: row.Serial,
+        },
+      });
+    }
+    return {
+      empId: Number(row.EmpCode),
+      timestamp: row.recordTime ? excelSerialToLibyaDate(row.recordTime) : null,
+      type: 'check-out' as 'check-in' | 'check-out',
+      deviceId: 1,
+      // serial: row.Serial,
+    };
+  });
 
-//     const zkInstance = new ZKLib(
-//       device.ip,
-//       device.port,
-//       10000,
-//       4000,
-//       device.commKey
-//     );
-//     req.zkInstance = zkInstance;
+  // fs.writeFileSync('rawLogs.json', JSON.stringify(logs, null, 2));
+  // logger.info('logs are here', {
+  //   logs: logs.filter((l) => l.empId && l.timestamp),
+  // });
 
-//     await zkInstance.createSocket();
-//     // await zkInstance.setCommKey(device.commKey);
+  const records = await RawAttendance.bulkCreate(
+    logs.filter((l) => l.empId && l.timestamp) as {
+      empId: number;
+      timestamp: Date;
+      type: 'check-in' | 'check-out';
+      deviceId: number;
+    }[],
+    { ignoreDuplicates: true }
+  );
+  logger.info('created the RawAttendance Logs successfully', {
+    service: 'excel-import',
+    records: records.length,
+  });
 
-//     const logs = (await zkInstance.getAttendances()) as DeviceLogsAttributes;
-//     const { data } = logs || [];
+  res.status(200).json({
+    status: 'success',
+    // logs,
+    records: records.length,
+  });
+});
 
-//     logger.info(`Retrieved ${data.length} logs from device[${device.ip}]`, {
-//       service: 'rawAttendance-controller',
-//       // data,
-//     });
+function excelSerialToLibyaDate(serial: number): Date {
+  // Excel epoch starts at 1899-12-30
+  const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+  const ms = serial * 24 * 60 * 60 * 1000;
+  const offset = new Date().getTimezoneOffset() * 60 * 1000;
+  const utcDate = new Date(excelEpoch.getTime() + ms + offset);
 
-//     const filtered = data.filter((log) => {
-//       const recordTime = new Date(log.recordTime);
-//       return recordTime >= fromDate && recordTime <= toDate;
-//     });
-
-//     const newRocords = filtered.map((log) => ({
-//       empId: +log.deviceUserId,
-//       timestamp: new Date(log.recordTime),
-//       deviceId,
-//       type: (log.attendanceType === 0 ? 'check-in' : 'check-out') as
-//         | 'check-in'
-//         | 'check-out',
-//     }));
-
-//     logger.info(`Filtered raw attendance data from Device[${deviceId}]`, {
-//       service: 'sync-attendance',
-//       // data: newRocords,
-//       data,
-//     });
-
-//     const inserted = await RawAttendance.bulkCreate(newRocords, {
-//       ignoreDuplicates: true,
-//       // fields: ['deviceId', 'empId', 'timestamp', 'type'],
-//     });
-
-//     res.status(200).json({
-//       status: 'success',
-//       message: 'Attendance sync completed successfully',
-//       inserted: inserted.length,
-//       totalFetched: data.length,
-//     });
-//   } catch (err: any) {
-//     logger.info('Failed to sync attendances', {
-//       service: 'rawAttendance-controller',
-//       errName: err.name,
-//       msg: err.message,
-//     });
-
-//     res.status(200).json({
-//       status: 'fail',
-//       error: err.message,
-//     });
-//   } finally {
-//     req.zkInstance.disconnect();
-//   }
-// };
+  // Libya = UTC+2
+  // return new Date(utcDate.getTime() + 2 * 60 * 60 * 1000);
+  // return toLibya(new Date(utcDate));
+  return utcDate;
+}

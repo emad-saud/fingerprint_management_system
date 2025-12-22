@@ -13,6 +13,8 @@ const initShiftModel = (db: Sequelize) => {
     declare startTime: string;
     declare endTime: string;
     declare allowOvertime: boolean;
+    declare gracePeriodIn: number;
+    declare gracePeriodOut: number;
     declare isFlexible: boolean;
     declare shiftDays: ShiftDayAttributes[];
   }
@@ -30,18 +32,26 @@ const initShiftModel = (db: Sequelize) => {
         unique: true,
       },
       startTime: {
-        type: DataTypes.STRING,
+        type: DataTypes.TIME,
         allowNull: false,
       },
       endTime: {
-        type: DataTypes.STRING,
+        type: DataTypes.TIME,
         allowNull: true,
       },
       allowOvertime: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
-      gracePeriodMinutes: {
+      gracePeriodIn: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+        validate: {
+          min: 0,
+          max: 60,
+        },
+      },
+      gracePeriodOut: {
         type: DataTypes.INTEGER,
         defaultValue: 0,
         validate: {

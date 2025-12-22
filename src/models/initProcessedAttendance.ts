@@ -18,6 +18,10 @@ export const initProcessedAttendance = (db: Sequelize) => {
     declare firstPunch: Date;
     declare lastPunch: Date;
     declare workDurationMinutes: number | undefined;
+    declare earlyIn: number;
+    declare earlyOut: number;
+    declare lateIn: number;
+    declare lateOut: number;
   }
 
   ProcessedAttendance.init(
@@ -39,9 +43,38 @@ export const initProcessedAttendance = (db: Sequelize) => {
         type: DataTypes.DATEONLY,
         allowNull: false,
       },
+      workedMinutes: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+
+      requiredMinutes: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+
+      holidayMinutes: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      overtimeMinutes: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+
+      netMinutes: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+
+      detailsJson: {
+        type: DataTypes.JSONB,
+        allowNull: true,
+      },
       shiftId: {
         type: DataTypes.INTEGER,
-        // allowNull: false,
+        field: 'shift_id',
+        allowNull: true,
         references: {
           model: 'shifts',
           key: 'id',
@@ -49,32 +82,38 @@ export const initProcessedAttendance = (db: Sequelize) => {
       },
       shiftDayId: {
         type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
-        allowNull: true,
+        field: 'shift_day_id',
         references: {
           model: 'shift_days',
           key: 'id',
         },
       },
-      checkIn: {
+      firstPunch: {
         type: DataTypes.TIME,
-        allowNull: true,
-      },
-      checkOut: {
-        type: DataTypes.TIME,
-        allowNull: true,
-      },
-      workDurationMinutes: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
       },
       lastPunch: {
         type: DataTypes.TIME,
-        allowNull: true,
       },
-      firstPunch: {
+      checkIn: {
         type: DataTypes.TIME,
-        allowNull: true,
+      },
+      checkOut: {
+        type: DataTypes.TIME,
+      },
+      earlyIn: {
+        type: DataTypes.INTEGER,
+      },
+      earlyOut: {
+        type: DataTypes.INTEGER,
+      },
+      lateIn: {
+        type: DataTypes.INTEGER,
+      },
+      lateOut: {
+        type: DataTypes.INTEGER,
+      },
+      dayName: {
+        type: DataTypes.ENUM('sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'),
       },
     },
     {

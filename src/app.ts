@@ -12,6 +12,7 @@ import deviceRouter from './routes/deviceRoutes.js';
 import overtimeRouter from './routes/overtimeRoutes.js';
 import processedAttRouter from './routes/processedAttendanceRoutes.js';
 import shiftAssignmentRouter from './routes/shiftAssignmentRoutes.js';
+import holidayRouter from './routes/holidayRoutes.js';
 
 import { globalErrorHandler } from './controllers/errorController.js';
 
@@ -31,6 +32,7 @@ app.use('/api/v1/devices', deviceRouter);
 app.use('/api/v1/overtime', overtimeRouter);
 app.use('/api/v1/processed-att', processedAttRouter);
 app.use('/api/v1/shift-assign', shiftAssignmentRouter);
+app.use('/api/v1/holidays', holidayRouter);
 
 app.use(globalErrorHandler);
 

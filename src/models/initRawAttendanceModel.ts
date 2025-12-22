@@ -27,6 +27,10 @@ const initRawAttendanceModel = (db: Sequelize) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         field: 'emp_id', // ✅ maps camelCase → snake_case
+        references: {
+          model: 'employees',
+          key: 'emp_id',
+        },
       },
       deviceId: {
         type: DataTypes.INTEGER,
