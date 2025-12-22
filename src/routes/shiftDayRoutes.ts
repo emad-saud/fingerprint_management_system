@@ -8,14 +8,14 @@ import {
   deleteShiftDay,
 } from '../controllers/shiftDayController.js';
 
-const router = Router();
+const shiftDayRouter = Router();
 
-router.route('/').get(getAllShiftDays).post(createShiftDay);
+shiftDayRouter.route('/').get(getAllShiftDays).post(createShiftDay);
 
-router
+shiftDayRouter
   .route('/:id')
   .get(getShiftDay)
   .patch(updateShiftDay)
   .delete(deleteShiftDay);
 
-export default router;
+export default shiftDayRouter;

@@ -13,6 +13,7 @@ import overtimeRouter from './routes/overtimeRoutes.js';
 import processedAttRouter from './routes/processedAttendanceRoutes.js';
 import shiftAssignmentRouter from './routes/shiftAssignmentRoutes.js';
 import holidayRouter from './routes/holidayRoutes.js';
+import shiftDayRouter from './routes/shiftDayRoutes.js';
 
 import { globalErrorHandler } from './controllers/errorController.js';
 
@@ -33,6 +34,7 @@ app.use('/api/v1/overtime', overtimeRouter);
 app.use('/api/v1/processed-att', processedAttRouter);
 app.use('/api/v1/shift-assign', shiftAssignmentRouter);
 app.use('/api/v1/holidays', holidayRouter);
+app.use('/api/v1/shift-days', shiftDayRouter);
 
 app.use(globalErrorHandler);
 
