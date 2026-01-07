@@ -3,14 +3,13 @@ import type { Optional } from 'sequelize';
 interface ShiftDayAttributes {
   id: string;
   dayOfWeek: 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-  startTime: Date;
-  endTime: Date;
+  startTime: string;
+  endTime: string;
   allowOvertime: boolean;
   gracePeriodIn: number;
   gracePeriodOut: number;
   shiftId: number;
   isOffDuty: boolean;
-
 }
 
 interface ShiftDayCreationAttributes

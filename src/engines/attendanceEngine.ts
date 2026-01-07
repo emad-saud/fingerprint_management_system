@@ -49,10 +49,19 @@ export const attendanceEngine = {
 
     for (const emp of employees) {
       const assignments = emp.shiftAssignments || [];
+      // logger.info(`Calculating emp[${emp.empId}] attendance!`);
+
+      // if (emp.empId === 119) {
+      //   logger.info('emp[119] shift assignments', {
+      //     assignments,
+      //   });
+      // }
 
       for (const dateObj of dates) {
         const dateKey = dateOnlyKeyFromLibya(dateObj);
-        const empLogsForDay = logsByEmp[emp.empId]![dateKey];
+        const empLogsForDay = !!logsByEmp[emp.empId]
+          ? logsByEmp[emp.empId]![dateKey]
+          : [];
 
         const assignment = assignments.find((a) => {
           const from = new Date(a.validFrom);
@@ -74,6 +83,7 @@ export const attendanceEngine = {
         }
 
         const shift = shifts.find((s) => s.id === assignment.shiftId);
+        
         if (!shift) {
           result.push({
             empId: emp.empId,

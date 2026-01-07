@@ -6,20 +6,11 @@ import {
   updateOne,
 } from './factoryHandler.js';
 
-import {
-  ProcessedAttendance,
-  Employee,
-  RawAttendance,
-  Shift,
-  ShiftDay,
-  ShiftAssignment,
-  Department,
-  Overtime,
-} from '../models/index.js';
+import { Op } from 'sequelize';
+
+import { Employee, ProcessedAttendance } from '../models/index.js';
 import catchAsync from '../utils/catchAsync.js';
 import AppError from '../utils/appError.js';
-import { Op } from 'sequelize';
-import { logger } from '../utils/logger.js';
 import { attendanceService } from '../services/attendanceService.js';
 
 // Convert a UTC date to Libya local time (UTC+2) correctly
@@ -78,18 +69,83 @@ export const deleteProcessedAttendance = deleteOne(
 // }
 
 export const calcRawAttendance = catchAsync(async (req, res, next) => {
-  const { fromDate, toDate } = req.query;
+  const { fromDate, toDate, empId } = req.query;
+
+  const employeeIds = empId?.toString().split(',').map(Number);
+
   const params =
     typeof fromDate === 'string' && typeof toDate === 'string'
-      ? [fromDate, toDate]
+      ? [fromDate, toDate, employeeIds]
       : [];
 
+  if (!params.length)
+    return next(
+      new AppError(
+        'Please provide from and to dates in the request query!',
+        400
+      )
+    );
+
   const result = await attendanceService.processAttendance(
-    ...(params as [string, string])
+    ...(params as [string, string, number[] | undefined])
   );
   res.status(200).json({
     status: 'success',
     results: result.length,
-    data: result.filter((r) => r.empId === 71),
+    data: result.filter((r: any) => r.empId === 119),
+  });
+});
+
+export const calcWageForEmployee = catchAsync(async (req, res, next) => {
+  const { empId, fromDate, toDate, wage } = req.query as {
+    empId?: number;
+    fromDate?: string;
+    toDate?: string;
+    wage?: number;
+  };
+
+  if (!fromDate || !toDate || !empId || !wage)
+    return next(
+      new AppError('Please provide fromDate, toDate, wage, and empId', 400)
+    );
+
+  const employee = await Employee.findOne({
+    where: {
+      empId,
+    },
+  });
+
+  const processedAtt = await ProcessedAttendance.findAll({
+    where: {
+      date: { [Op.between]: [fromDate, toDate] },
+      empId,
+    },
+  });
+
+  const totalRequiredMinutes = processedAtt.reduce(
+    (sum, item) => sum + item.requiredMinutes,
+    0
+  );
+
+  const totalWorkedMinutes = processedAtt.reduce(
+    (sum, item) => sum + item.netMinutes,
+    0
+  );
+
+  const totalLateIn = processedAtt.reduce((sum, item) => sum + item.lateIn, 0);
+  const totalEarlyOut = processedAtt.reduce(
+    (sum, item) => sum + item.earlyOut,
+    0
+  );
+
+  res.status(200).json({
+    status: 'success',
+    employee: employee?.empId,
+    totalRequiredMinutes,
+    totalWorkedMinutes,
+    totalLateIn,
+    totalEarlyOut,
+    resultWage: (totalWorkedMinutes / totalRequiredMinutes) * wage,
+    processedAtt: processedAtt,
   });
 });

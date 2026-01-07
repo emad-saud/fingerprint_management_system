@@ -20,10 +20,13 @@ export const createShiftAssignment = createOne(ShiftAssignment, [
   'empId',
   'validFrom',
   'validTo',
+  'shiftId',
 ]);
 export const updateShiftAssignment = updateOne(ShiftAssignment, 'params:id', [
   'validFrom',
   'validTo',
+  'shiftId',
+  'empId',
 ]);
 export const deleteShiftAssignment = deleteOne(ShiftAssignment, 'params:id');
 

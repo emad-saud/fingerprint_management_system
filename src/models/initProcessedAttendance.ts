@@ -69,7 +69,8 @@ export const initProcessedAttendance = (db: Sequelize) => {
 
       detailsJson: {
         type: DataTypes.JSONB,
-        allowNull: true,
+        allowNull: false,
+        defaultValue: {},
       },
       shiftId: {
         type: DataTypes.INTEGER,
@@ -121,6 +122,7 @@ export const initProcessedAttendance = (db: Sequelize) => {
       tableName: 'processed_attendance',
       modelName: 'ProcessedAttendance',
       underscored: true,
+      indexes: [{ fields: ['emp_id', 'date'], unique: true }],
     }
   );
 

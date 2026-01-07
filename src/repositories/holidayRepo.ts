@@ -1,7 +1,11 @@
+import { type WhereOptions } from 'sequelize';
+
 import { PublicHoliday } from '../models/index.js';
 
 export const holidayRepo = {
-  getAllPublicHolidays: () => PublicHoliday.findAll(),
+  getAllPublicHolidays: (
+    WhereOptions: WhereOptions<typeof PublicHoliday> = {}
+  ) => PublicHoliday.findAll(),
   getPublicHolidaysForEmp: (empId: number) =>
     PublicHoliday.findAll({ where: { empId } }),
   getPublicHolidayForDate: (date: string) =>

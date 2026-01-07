@@ -1,5 +1,7 @@
 import { Optional } from 'sequelize';
 
+import { JsonValue } from './json';
+
 interface ProcessedAttendanceAttributes {
   id: string;
   empId: number;
@@ -9,22 +11,53 @@ interface ProcessedAttendanceAttributes {
   holidayMinutes: number;
   overtimeMinutes: number;
   netMinutes: number;
-  detailsJson: string;
+  detailsJson: JsonValue;
   shiftId: number | undefined | null;
   shiftDayId: string | undefined | null;
   checkIn: Date;
   checkOut: Date;
   lastPunch: Date;
-  firstPunch: Date;
+  firstPunch?: Date;
   earlyIn: number;
   earlyOut: number;
   lateIn: number;
   lateOut: number;
-  dayName: 'sat' | 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri';
+  dayName: 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
   // workDurationMinutes: number | undefined;
 }
 
 interface ProcessedAttendanceCreationAttributes
-  extends Optional<ProcessedAttendanceAttributes, 'id'> {}
+  extends Optional<ProcessedAttendanceAttributes, 'id'> {
+  detailsJson?: JsonValue;
+}
 
 export { ProcessedAttendanceAttributes, ProcessedAttendanceCreationAttributes };
+
+export interface ProcessedAttendanceRecordAtt {
+  empId: number;
+  date: string;
+
+  status?: string;
+  detailsJson?: JsonValue;
+
+  shiftId?: number;
+  shiftDayId?: string | undefined;
+  dayName?: string;
+
+  firstPunch?: string | null;
+  lastPunch?: string | null;
+
+  checkIn?: string | null;
+  checkOut?: string | null;
+
+  requiredMinutes?: number;
+  workedMinutes?: number;
+  overtimeMinutes?: number;
+  holidayMinutes?: number;
+  netMinutes?: number;
+
+  earlyIn?: number;
+  earlyOut?: number;
+  lateIn?: number;
+  lateOut?: number;
+}

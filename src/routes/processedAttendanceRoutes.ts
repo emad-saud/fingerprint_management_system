@@ -7,6 +7,7 @@ import {
   deleteProcessedAttendance,
   updateProcessedAttendance,
   calcRawAttendance,
+  calcWageForEmployee,
 } from '../controllers/processedAttendanceController.js';
 
 const processedAttRouter = Router();
@@ -17,6 +18,7 @@ processedAttRouter
   .post(createProcessedAttendance);
 
 processedAttRouter.get('/calc', calcRawAttendance);
+processedAttRouter.get('/get-payroll', calcWageForEmployee);
 
 processedAttRouter
   .route('/:id')

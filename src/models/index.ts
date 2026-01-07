@@ -95,6 +95,7 @@ Employee.hasMany(Overtime, { as: 'otList', foreignKey: 'emp_id' });
 ProcessedAttendance.belongsTo(Employee, {
   as: 'employee',
   foreignKey: 'emp_id',
+  targetKey: 'empId'
 });
 Employee.hasMany(ProcessedAttendance, {
   as: 'processedAttendance',

@@ -1,18 +1,23 @@
 import {
   type Employee,
-  type RawAttendance,
   type Shift,
   Overtime,
   type PublicHoliday,
-  ShiftDay,
 } from '../models/index.js';
 import { logger } from '../utils/logger.js';
 
 import { type ProcessedLog } from '../utils/groupLogs.js';
 
-import { parseTimeToDateOnLocal, toLibya } from '../utils/time.js';
+import {
+  parseTimeToDateOnLocal,
+  toLibya,
+  toPgTime,
+  toMinutes,
+  toLibyaTest,
+} from '../utils/time.js';
 import type { ShiftAssignmentAttributes } from '../types/shiftAssignmentTypes.js';
 import type { ShiftDayAttributes } from '../types/shiftDayTypes.js';
+import type { ProcessedAttendanceRecordAtt } from '../types/processedAttendanceTypes.js';
 
 export function processOneDay({
   emp,
@@ -33,11 +38,16 @@ export function processOneDay({
   overtimeRecord: InstanceType<typeof Overtime> | undefined;
   holiday: InstanceType<typeof PublicHoliday> | undefined;
   assignment: ShiftAssignmentAttributes;
-}) {
+}): ProcessedAttendanceRecordAtt {
   logsForDay.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
   const punches = (logsForDay || [])
     .map((l) => {
-      const lib = toLibya(new Date(l.timestamp));
+      const lib = toLibyaTest(new Date(l.timestamp));
+      // logger.info('sorting punches lol', {
+      //   service: 'process-one-day',
+      //   log: l.timestamp,
+      //   lib,
+      // });
       return { ...l, localTimeStamp: lib };
     })
     .sort((a, b) => a.localTimeStamp.getTime() - b.localTimeStamp.getTime());
@@ -53,13 +63,14 @@ export function processOneDay({
 
   //   return from <= dateObj && (!to || dateObj <= to);
   // });
+
   if (!assignment)
     return {
       empId: emp.empId,
       date: dateKey,
       status: 'NO_SHIFT',
-      firstPunch,
-      lastPunch,
+      firstPunch: toPgTime(firstPunch),
+      lastPunch: toPgTime(lastPunch),
       // overtimeMinutes: getOvertime(overtime, emp.empId, dateKey),
       overtimeMinutes: overtimeRecord?.durationMinutes ?? 0,
     };
@@ -95,9 +106,9 @@ export function processOneDay({
       date: dateKey,
       shiftId: shift?.id,
       shiftDayId: shiftDay?.id,
-      dayName,
-      firstPunch,
-      lastPunch,
+      dayName: dayName ?? 'UNKNOWN_DAY',
+      firstPunch: toPgTime(firstPunch),
+      lastPunch: toPgTime(lastPunch),
       checkIn: null,
       checkOut: null,
       requiredMinutes,
@@ -116,25 +127,39 @@ export function processOneDay({
   const shiftStart = parseTimeToDateOnLocal(dateKey, effectiveStart as string);
   const shiftEnd = parseTimeToDateOnLocal(dateKey, effectiveEnd as string);
 
+  // logger.info('see what happens here', {
+  //   service: 'process-one-day',
+  //   shiftStart,
+  //   shiftEnd,
+  //   firstPunch,
+  //   lastPunch,
+  //   effectiveStart,
+  //   effectiveEnd,
+  // });
+
   if (shiftDay?.isOffDuty) {
     const requiredMinutes = Math.round(
-      (shiftDay.endTime.getTime() - shiftDay.startTime.getTime()) / 60000
+      (parseTimeToDateOnLocal(dateKey, shiftDay.endTime).getTime() -
+        parseTimeToDateOnLocal(dateKey, shiftDay.startTime).getTime()) /
+        60000
     );
+    const overtimeMinutes = overtimeRecord?.durationMinutes ?? 0;
+
     return {
       empId: emp.empId,
       date: dateKey,
       shiftId: shift?.id,
       shiftDayId: shiftDay.id,
-      dayName,
-      firstPunch,
-      lastPunch,
+      dayName: dayName ?? 'UNKNOWN_DAY',
+      firstPunch: toPgTime(firstPunch),
+      lastPunch: toPgTime(lastPunch),
       checkIn: null,
       checkOut: null,
       requiredMinutes,
       workedMinutes: requiredMinutes,
-      overtimeMinutes: overtimeRecord?.durationMinutes ?? 0,
+      overtimeMinutes: overtimeMinutes,
       holidayMinutes: 0,
-      netMinutes: requiredMinutes + (overtimeRecord?.durationMinutes ?? 0),
+      netMinutes: requiredMinutes + overtimeMinutes,
     };
   }
 
@@ -144,9 +169,9 @@ export function processOneDay({
       date: dateKey,
       shiftId: shift?.id,
       shiftDayId: shiftDay?.id,
-      dayName,
-      firstPunch,
-      lastPunch,
+      dayName: dayName ?? 'UNKNOWN_DAY',
+      firstPunch: toPgTime(firstPunch),
+      lastPunch: toPgTime(lastPunch),
       checkIn: null,
       checkOut: null,
       requiredMinutes,
@@ -167,10 +192,12 @@ export function processOneDay({
       date: dateKey,
       shiftId: shift?.id,
       shiftDayId: shiftDay?.id,
-      dayName,
-      firstPunch,
-      lastPunch,
-      checkIn: Math.max(firstPunch.getTime() ?? 0, shiftStart.getTime()),
+      dayName: dayName ?? 'UNKNOWN_DAY',
+      firstPunch: toPgTime(firstPunch),
+      lastPunch: toPgTime(lastPunch),
+      checkIn: toPgTime(
+        new Date(Math.max(firstPunch.getTime() ?? 0, shiftStart.getTime()))
+      ),
       checkOut: null,
       requiredMinutes,
       workedMinutes: 0,
@@ -194,25 +221,40 @@ export function processOneDay({
   const checkIn = Math.max(firstPunch.getTime(), shiftStart.getTime());
   const checkOut = Math.min(lastPunch?.getTime() ?? 0, shiftEnd.getTime());
 
-  const lateIn = Math.max(
-    0,
-    checkIn - gracePeriodIn * 60 * 1000 - shiftStart.getTime()
-  );
-  const lateOut = Math.max(0, lastPunch?.getTime() ?? 0 - shiftEnd.getTime());
+  const gracePeriodInMs = gracePeriodIn * 60000;
+  const gracePeriodOutMs = gracePeriodOut * 60000;
+  const lateIn =
+    checkIn - gracePeriodInMs - shiftStart.getTime() <= 0
+      ? 0
+      : checkIn - shiftStart.getTime();
+  // const lateIn = Math.max(
+  //   0,
+  //   toMinutes(checkIn - gracePeriodInMinutes * 60 * 1000 - shiftStart.getTime())
+  // );
 
-  const earlyIn = Math.min(0, shiftStart.getTime() - firstPunch.getTime());
-  const earlyOut = Math.min(
+  const lateOut = Math.max(
     0,
-    shiftEnd.getTime() - (checkOut + gracePeriodOut * 60 * 1000)
+    toMinutes((lastPunch?.getTime() ?? 0) - shiftEnd.getTime())
   );
-  // const workedMinutes =
-  //   holiday || shiftDay?.isOffDuty
-  //     ? (shiftEnd.getTime() - shiftStart.getTime()) / 60000
-  //     : Math.max(0, Math.round((checkIn - checkOut) / 60000));
 
+  const earlyIn = Math.max(
+    0,
+    toMinutes(shiftStart.getTime() - firstPunch.getTime())
+  );
+
+  const earlyOut =
+    shiftEnd.getTime() - checkOut - gracePeriodOutMs <= 0
+      ? 0
+      : shiftEnd.getTime() - checkOut;
+  // const earlyOut = Math.min(
+  //   0,
+  //   toMinutes(shiftEnd.getTime() - (checkOut + gracePeriodOut * 60 * 1000))
+  // );
+
+  const overtimeMinutes = overtimeRecord?.durationMinutes ?? 0;
   const workedMinutes = Math.max(0, Math.round((checkOut - checkIn) / 60000));
 
-  if (emp.empId === 71) {
+  if (emp.empId === 119) {
     const overtimeMinutes = overtimeRecord?.durationMinutes ?? 0;
     logger.info('processing my attendance!', {
       service: 'attendance-engine',
@@ -232,6 +274,8 @@ export function processOneDay({
         cIn: checkIn,
         cOut: checkOut,
         wMin: (checkOut - checkIn) / 60000,
+        shiftStart,
+        shiftEnd,
       },
     });
   }
@@ -241,28 +285,21 @@ export function processOneDay({
     date: dateKey,
     shiftId: shift?.id,
     shiftDayId: shiftDay?.id,
-    dayName,
-    firstPunch,
-    lastPunch,
-    checkIn: new Date(checkIn),
-    checkOut: new Date(checkOut),
+    dayName: dayName ?? 'UNKNOWN_DAY',
+    firstPunch: toPgTime(firstPunch),
+    lastPunch: toPgTime(lastPunch),
+    checkIn: toPgTime(new Date(checkIn)),
+    checkOut: toPgTime(new Date(checkOut)),
     workedMinutes,
     overtimeMinutes: overtimeRecord?.durationMinutes ?? 0,
+    requiredMinutes,
+    netMinutes: workedMinutes + overtimeMinutes,
     earlyIn,
     earlyOut,
     lateIn,
     lateOut,
   };
 }
-
-// function getOvertime(
-//   overtimeList: InstanceType<typeof Overtime>[],
-//   empId: number,
-//   date: string
-// ) {
-//   const row = overtimeList.find((o) => o.empId === empId && o.date === date);
-//   return row?.durationMinutes ?? 0;
-// }
 
 function minutesBetween(timeA: string, timeB: string) {
   const [ha, ma] = timeA.split(':').map(Number) as [number, number];

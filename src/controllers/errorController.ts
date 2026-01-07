@@ -41,6 +41,7 @@ export const globalErrorHandler: ErrorRequestHandler = (
       name: err.name,
       message: err.message,
     },
+    errObj: err,
   });
 
   let resObj = err;
