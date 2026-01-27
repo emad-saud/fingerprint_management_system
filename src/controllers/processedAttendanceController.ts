@@ -92,7 +92,7 @@ export const calcRawAttendance = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     results: result.length,
-    data: result.filter((r: any) => r.empId === 119),
+    data: result.filter((r: any) => r.empId === 71),
   });
 });
 

@@ -32,16 +32,19 @@ const initOvertimeModel = (db: Sequelize) => {
       empId: {
         type: DataTypes.INTEGER,
         allowNull: false,
-        references: {
-          model: 'employee',
-          key: 'emp_id',
-        },
+        // field: 'emp_id',
+        // references: {
+        //   model: 'employees',
+        //   key: 'emp_id',
+        // },
       },
     },
     {
       sequelize: db,
       indexes: [{ fields: ['emp_id', 'date'], unique: true }],
       underscored: true,
+      modelName: 'Overtime',
+      tableName: 'overtime_logs',
     }
   );
 

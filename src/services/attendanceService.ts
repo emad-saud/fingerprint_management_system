@@ -18,6 +18,13 @@ export const attendanceService = {
     const employeeWhereOptions = empId.length
       ? { empId: { [Op.in]: [empId] } }
       : {};
+
+    logger.info('Processing Attendance', {
+      service: 'process-attendance',
+      fromDate,
+      toDate,
+      empId,
+    });
     const employees = await employeeRepo.getAllEmployeeWithShifts(
       employeeWhereOptions
     );

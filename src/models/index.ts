@@ -1,3 +1,5 @@
+import { DataTypes } from 'sequelize';
+
 import initDb from '../db.js';
 import initEmployeeModel from './initEmployeeModel.js';
 import initDepartmentModel from './initDepartmentModel.js';
@@ -88,14 +90,28 @@ Shift.hasMany(ShiftAssignment, {
 });
 
 // Overtime : Employee (Associations)
-Overtime.belongsTo(Employee, { as: 'employee', foreignKey: 'emp_id' });
-Employee.hasMany(Overtime, { as: 'otList', foreignKey: 'emp_id' });
+Overtime.belongsTo(Employee, {
+  as: 'employee',
+  foreignKey: {
+    name: 'empId',
+    field: 'emp_id',
+    // type: DataTypes.INTEGER,
+  },
+  targetKey: 'empId',
+});
+Employee.hasMany(Overtime, {
+  as: 'otList',
+  foreignKey: {
+    name: 'empId',
+    field: 'emp_id',
+  },
+});
 
 // ProcessedAttendance : Employee (Associations)
 ProcessedAttendance.belongsTo(Employee, {
   as: 'employee',
   foreignKey: 'emp_id',
-  targetKey: 'empId'
+  targetKey: 'empId',
 });
 Employee.hasMany(ProcessedAttendance, {
   as: 'processedAttendance',
